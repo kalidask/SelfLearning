@@ -1,0 +1,183 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "annotations": {
+      "openshift.io/generated-by": "OpenShiftNewApp",
+      "iconClass": "icon-java",
+      "description": "Generic Application template for Deploying Images to Openshift"
+    },
+    "name": "deploytemplate"
+  },
+
+"parameters": [
+    {
+      "description": "The name for the application.",
+      "name": "APP_NAME",
+      "value": "helloworld"
+    },
+    {
+      "description": "The name for the Pod.",
+      "name": "POD_NAME",
+      "value": "hellow"
+    },
+    {
+      "description": "The version for the Pod.",
+      "name": "APP_IMAGE",
+      "value": "quay.io/wildfly/wildfly-centos7:latest"
+    },
+    {
+      "description": "Namespace",
+      "name": "NAMESPACE",
+      "value": "core"
+    },
+    {
+      "description": "Image Secret",
+      "name": "IMAGE_SECRET",
+      "value": "test1"
+    },
+    {
+      "description": "Image Name",
+      "name": "IMAGE_NAME",
+      "value": "hello-world"
+    }
+],
+  "objects": [
+{
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${APP_NAME}",
+"labels": {
+          "k8s-app": "${APP_NAME}",
+          "appname": "${APP_NAME}"
+      },
+ "annotations": {
+          "openshift.io/generated-by": "OpenShiftNewApp"
+        }
+}
+,
+      "spec": {
+        "ports": [
+          {
+            "name": "8080-tcp",
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ],
+        "selector": {
+          "k8s-app": "${APP_NAME}"
+        },
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+      {
+      "apiVersion": "extensions/v1beta1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "${APP_NAME}",
+        "namespace": "${NAMESPACE}",
+        "labels": {
+          "k8s-app": "${APP_NAME}",
+          "appname": "${APP_NAME}",
+          "version": "2.0"
+        },
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1",
+          "openshift.io/generated-by": "OpenShiftNewApp"
+        }
+      
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+ "matchLabels": {
+            "k8s-app": "${APP_NAME}",
+          "appname": "${APP_NAME}"
+          }
+        },
+	"template": {
+          "metadata": {
+            "name": "${APP_NAME}",
+            "labels": {
+              "k8s-app": "${APP_NAME}",
+          "appname": "${APP_NAME}"
+          },
+          "annotations": {
+          "openshift.io/generated-by": "OpenShiftNewApp"
+        }
+}
+,
+	  "spec": {
+        "containers": [
+              {
+                "name": "${APP_NAME}",
+                "image": "${APP_IMAGE}",
+                "imagePullPolicy": "IfNotPresent",
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/",
+                    "port": 8080,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": "30",
+                  "timeoutSeconds": 3,
+                  "periodSeconds": 30
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/",
+                    "port": 8080,
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": "30",
+                  "timeoutSeconds": 3,
+                  "periodSeconds": 60
+                },
+                "env": [],
+                "resources": {
+                  "requests": {
+                    "cpu": "1",
+                    "memory": "100Mi"
+                  },
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "512Mi"
+                  }
+                },
+                "securityContext": {
+                  "privileged": false
+                },
+                "ports": [
+                  {
+                    "containerPort": "8080"
+                  }
+                ]
+              }
+            ],
+            
+            "restartPolicy": "Always",
+            "terminationGracePeriodSeconds": 30,
+            "dnsPolicy": "ClusterFirst",
+            "securityContext": {}
+            }
+            },
+	    
+	"strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          }
+        },
+        "revisionHistoryLimit": 10,
+        "progressDeadlineSeconds": 600
+      }
+    }
+  ]
+}             
